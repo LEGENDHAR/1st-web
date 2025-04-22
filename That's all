@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word List App</title>
+  <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --text-color: #000;
+      --table-bg: #fff;
+      --header-bg: #eee;
+    }
+    body.dark {
+      --bg-color: #1e1e1e;
+      --text-color: #f0f0f0;
+      --table-bg: #2a2a2a;
+      --header-bg: #3a3a3a;
+    }
+    body.sun {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --table-bg: #ffffe0;
+      --header-bg: #ffe680;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: var(--header-bg);
+    }
+    .menu-btn {
+      font-size: 24px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--text-color);
+    }
+    .search-wrapper {
+      position: relative;
+    }
+    .search-icon {
+      font-size: 20px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--text-color);
+    }
+    #searchBox {
+      display: none;
+      position: absolute;
+      top: 30px;
+      right: 0;
+      background: white;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #searchInput {
+      padding: 5px;
+      width: 200px;
+    }
+    #searchGo {
+      padding: 5px 10px;
+      background: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .theme-switch-wrapper {
+      display: flex;
+      align-items: center;
+    }
+    .theme-switch {
+      position: relative;
+      display: inline-block;
+      width: 70px;
+      height: 34px;
+      margin-left: 10px;
+    }
+    .theme-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider.round {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to right, #f4e842, #ffd700, #7777ff);
+      transition: background 0.8s ease;
+      border-radius: 34px;
+    }
+    .slider.round:before {
+      position: absolute;
+      content: "";
+      height: 28px;
+      width: 28px;
+      left: 3px;
+      bottom: 3px;
+      background: radial-gradient(circle at center, #ffeb3b, #f9a825);
+      border-radius: 50%;
+      transition: transform 0.8s ease, background 0.5s ease;
+    }
+    input:checked + .slider.round {
+      background: linear-gradient(to left, #333, #121212, #4c4c4c);
+    }
+    input:checked + .slider.round:before {
+      transform: translateX(36px);
+      background: radial-gradient(circle at center, #bbb, #222);
+      box-shadow: 0 0 6px 2px #888;
+    }
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background: var(--header-bg);
+      padding: 20px;
+      transition: left 0.3s ease;
+      z-index: 1000;
+    }
+    #sidebar.active {
+      left: 0;
+    }
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 900;
+      display: none;
+    }
+    .button-group {
+      margin: 20px;
+      text-align: center;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .edit-btn {
+      background-color: #007bff;
+    }
+    .edit-btn:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background-color: var(--table-bg);
+      text-align: left;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+    }
+    th {
+      background-color: var(--header-bg);
+      font-weight: 600;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    td:first-child, th:first-child {
+      width: 60px;
+    }
+    .delete-btn {
+      background-color: #e53935;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background-color: #c62828;
+    }
+    .blink {
+      animation: blink 0.5s ease-in-out;
+    }
+    @keyframes blink {
+      0% { background-color: yellow; }
+      100% { background-color: inherit; }
+    }
+  </style>
+</head>
+<body class="sun">
+  <div id="overlay" onclick="toggleSidebar()"></div>
+  <header>
+    <button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>
+    <div class="search-wrapper">
+      <button class="search-icon" onclick="toggleSearch()">🔍</button>
+      <div id="searchBox">
+        <input type="text" id="searchInput" placeholder="Search word..." />
+        <button id="searchGo" onclick="searchWord()">Search</button>
+      </div>
+    </div>
+    <div class="theme-switch-wrapper">
+      <label class="theme-switch">
+        <input type="checkbox" id="modeToggle" />
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </header>
+
+  <div id="sidebar">
+    <h3>Settings</h3>
+    <p>Toggle theme using the slider above</p>
+  </div>
+
+  <div class="button-group">
+    <button onclick="addEntry()">Add Entry</button>
+    <button onclick="saveData()">Save</button>
+    <button onclick="toggleDeleteMode()">Delete Mode</button>
+    <button id="toggleEditBtn" class="edit-btn" style="display: none;" onclick="toggleEditFinish()">Finish</button>
+  </div>
+
+  <table id="wordTable">
+    <thead>
+      <tr>
+        <th>S. No</th>
+        <th>Word</th>
+        <th>Meaning</th>
+        <th id="deleteColumnHeader" style="display: none;">Delete</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let data = [];
+    let deleteMode = false;
+    let editingIndex = -1;
+
+    document.getElementById("modeToggle").addEventListener("change", function () {
+      if (this.checked) {
+        document.body.classList.remove("sun");
+        document.body.classList.add("dark");
+      } else {
+        document.body.classList.remove("dark");
+        document.body.classList.add("sun");
+      }
+    });
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+      sidebar.classList.toggle("active");
+      overlay.style.display = sidebar.classList.contains("active") ? "block" : "none";
+    }
+
+    function toggleSearch() {
+      const box = document.getElementById("searchBox");
+      box.style.display = box.style.display === "block" ? "none" : "block";
+      if (box.style.display === "block") {
+        document.getElementById("searchInput").focus();
+      }
+    }
+
+    function toggleEditFinish() {
+      const btn = document.getElementById("toggleEditBtn");
+      if (btn.textContent === "Finish") {
+        const wordInput = document.getElementById("wordInput").value;
+        const meaningInput = document.getElementById("meaningInput").value;
+        if (wordInput && meaningInput) {
+          data[editingIndex] = { word: wordInput, meaning: meaningInput };
+          editingIndex = -1;
+          renderTable();
+          btn.textContent = "Edit";
+        }
+      } else {
+        editingIndex = data.length - 1;
+        renderTable(true);
+        btn.textContent = "Finish";
+      }
+    }
+
+    function addEntry() {
+      data.push({ word: "", meaning: "" });
+      editingIndex = data.length - 1;
+      renderTable(true);
+      document.getElementById("toggleEditBtn").style.display = "inline-block";
+      document.getElementById("toggleEditBtn").textContent = "Finish";
+    }
+
+    function renderTable(isEditing = false) {
+      const tbody = document.querySelector("#wordTable tbody");
+      const deleteHeader = document.getElementById("deleteColumnHeader");
+      tbody.innerHTML = "";
+      deleteHeader.style.display = deleteMode ? "" : "none";
+
+      data.forEach((item, index) => {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = index + 1;
+
+        if (isEditing && index === editingIndex) {
+          const wordCell = row.insertCell(1);
+          const meaningCell = row.insertCell(2);
+          wordCell.innerHTML = `<input id="wordInput" value="${item.word}" style="width: 100%; padding: 6px;">`;
+          meaningCell.innerHTML = `<input id="meaningInput" value="${item.meaning}" style="width: 100%; padding: 6px;">`;
+          setTimeout(() => document.getElementById("wordInput").focus(), 100);
+          document.getElementById("wordInput").addEventListener("keydown", e => {
+            if (e.key === "Enter") document.getElementById("meaningInput").focus();
+          });
+          document.getElementById("meaningInput").addEventListener("keydown", e => {
+            if (e.key === "Enter") toggleEditFinish();
+          });
+        } else {
+          row.insertCell(1).textContent = item.word;
+          row.insertCell(2).textContent = item.meaning;
+        }
+
+        const deleteCell = row.insertCell(3);
+        deleteCell.style.display = deleteMode ? "" : "none";
+        if (deleteMode) {
+          const btn = document.createElement("button");
+          btn.textContent = "Delete";
+          btn.className = "delete-btn";
+          btn.onclick = () => deleteRow(index);
+          deleteCell.appendChild(btn);
+        }
+      });
+    }
+
+    function deleteRow(index) {
+      if (confirm("Delete this entry?")) {
+        data.splice(index, 1);
+        renderTable();
+        saveData();
+      }
+    }
+
+    function toggleDeleteMode() {
+      deleteMode = !deleteMode;
+      renderTable();
+    }
+
+    function searchWord() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const rows = document.querySelectorAll("#wordTable tbody tr");
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].word.toLowerCase().includes(query)) {
+          rows[i].scrollIntoView({ behavior: "smooth", block: "center" });
+          rows[i].classList.add("blink");
+          setTimeout(() => rows[i].classList.remove("blink"), 500);
+          break;
+        }
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem("wordListData", JSON.stringify(data));
+      alert("Saved!");
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem("wordListData");
+      if (saved) {
+        data = JSON.parse(saved);
+        renderTable();
+      }
+    }
+
+    window.onload = loadData;
+  </script>
+</body>
+</html>
